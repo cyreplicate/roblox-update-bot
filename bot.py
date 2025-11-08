@@ -6,12 +6,13 @@ import os
 TOKEN = os.getenv("DISCORD_TOKEN")
 CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
 
-# These are your place IDs (works correctly now)
+# These are your place IDs
 GAME_IDS = [
     "27022845",          # void
     "135059717391268",   # null
     "100793252348239",   # dawn
-    "100626662604142"    # zero
+    "100626662604142",   # zero
+    "14430516363"        # test
 ]
 
 intents = discord.Intents.default()
@@ -23,7 +24,7 @@ async def get_games_info():
     url = "https://games.roblox.com/v1/games/multiget-place-details?placeIds=" + ",".join(GAME_IDS)
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
-            return await resp.json()  # <-- Return actual list of objects
+            return await resp.json()
 
 @tasks.loop(minutes=2)
 async def check_updates():
@@ -42,7 +43,6 @@ async def check_updates():
             updated_time = game["updated"]
             name = game["name"]
         except KeyError:
-            # Skip entries missing data
             continue
 
         if place_id not in last_updates:
