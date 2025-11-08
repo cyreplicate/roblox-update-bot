@@ -6,7 +6,7 @@ import os
 TOKEN = os.getenv("DISCORD_TOKEN")
 CHANNEL_ID = int(os.getenv("CHANNEL_ID"))
 
-# These are your place IDs
+# Place IDs to track
 GAME_IDS = [
     "27022845",          # void
     "135059717391268",   # null
@@ -24,7 +24,7 @@ async def get_games_info():
     url = "https://games.roblox.com/v1/games/multiget-place-details?placeIds=" + ",".join(GAME_IDS)
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as resp:
-            return await resp.json()
+            return await resp.json()  # Response is list of place info
 
 @tasks.loop(minutes=2)
 async def check_updates():
@@ -32,9 +32,9 @@ async def check_updates():
     channel = client.get_channel(CHANNEL_ID)
     games = await get_games_info()
 
-    # Ensure response is a list
+    # Make sure the API returned a list
     if not isinstance(games, list):
-        print("Roblox API returned unexpected:", games)
+        print("Unexpected Roblox API result:", games)
         return
 
     for game in games:
@@ -43,15 +43,16 @@ async def check_updates():
             updated_time = game["updated"]
             name = game["name"]
         except KeyError:
-            continue
+            continue  # skip any malformed entries
 
         if place_id not in last_updates:
             last_updates[place_id] = updated_time
             continue
 
+        # If timestamp changed → game updated
         if updated_time != last_updates[place_id]:
             await channel.send(
-                f"🎮 **{name}** just updated!\n"
+                f"@everyone 🎮 **{name}** just updated!\n"
                 f"🔗 https://www.roblox.com/games/{place_id}"
             )
             last_updates[place_id] = updated_time
